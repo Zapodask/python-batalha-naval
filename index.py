@@ -19,6 +19,8 @@ def handler(event, context):
             routes.connect(connection_id)
         elif key == "$disconnect":
             routes.disconnect(connection_id)
+        elif key == "searchGame":
+            routes.searchGame(connection_id)
         else:
             routes.default(connection_id)
 

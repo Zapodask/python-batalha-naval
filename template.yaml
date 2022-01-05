@@ -5,11 +5,11 @@ Parameters:
   projectName:
     Type: String
     AllowedPattern: "[a-zA-Z0-9]+[a-zA-Z0-9-]+[a-zA-Z0-9]+"
-    Default: my-project
+    Default: python-batalha-naval
   bucketName:
     Type: String
     AllowedPattern: "[a-zA-Z0-9]+[a-zA-Z0-9-]+[a-zA-Z0-9]+"
-    Default: my-project-bucket-lambda-code
+    Default: python-batalha-naval-bucket-lambda-code
   apiGatewayStageName:
     Type: String
     AllowedPattern: "[a-z0-9]+"
@@ -41,18 +41,28 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess
       Policies:
+        - PolicyName: dynamoDbSearchGameTable
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:Scan
+                  - dynamodb:PutItem
+                  - dynamodb:DeleteItem
+                Resource: !GetAtt dynamoDbSearchGameTable.Arn
         - PolicyName: root
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
-                  - dynamodb:PutItem
-                  - dynamodb:DeleteItem
-                  - dynamodb:GetItem
                   - dynamodb:Scan
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
                   - dynamodb:UpdateItem
-                Resource: !GetAtt dynamoDbUsersTable.Arn
+                  - dynamodb:DeleteItem
+                Resource: !GetAtt dynamoDbGameTable.Arn
 
   ## Função lambda
   lambdaFunction:
@@ -73,7 +83,8 @@ Resources:
       Runtime: python3.9
       Environment:
         Variables: 
-          USERS_DB: !Sub ${projectName}-users
+          SEARCH_GAME_TABLE: !Sub ${projectName}-search-game
+          GAME_TABLE: !Sub ${projectName}-game
           API_ENDPOINT: !GetAtt apiGateway.ApiEndpoint
           STAGE_NAME: !Ref apiGatewayStageName
 
@@ -153,6 +164,19 @@ Resources:
         - '/'
         - - 'integrations'
           - !Ref routesIntegration
+    
+  ### Search game
+  searchGameRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref apiGateway
+      RouteKey: searchGame
+      AuthorizationType: NONE
+      OperationName: SearchGameRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref routesIntegration
 
   ## Deploy
   deployment:
@@ -161,6 +185,7 @@ Resources:
       - connectRoute
       - disconnectRoute
       - defaultRoute
+      - searchGameRoute
     Properties:
       ApiId: !Ref apiGateway
 
@@ -178,11 +203,11 @@ Resources:
   dynamoDbSearchGameTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub ${projectName}-searching-game
+      TableName: !Sub ${projectName}-search-game
       AttributeDefinitions: 
         - 
           AttributeName: connectionId
-          AttributeType: "S"
+          AttributeType: S
       KeySchema:
         -
           AttributeName: connectionId
@@ -199,28 +224,7 @@ Resources:
       AttributeDefinitions: 
         - 
           AttributeName: id
-          AttributeType: "N"
-        -
-          AttributeName: redPlayer
-          AttributeType: "S"
-        -
-          AttributeName: bluePlayer
-          AttributeType: "S"
-        -
-          AttributeName: redSide
-          AttributeType: "S"
-        -
-          AttributeName: blueSide
-          AttributeType: "S"
-        -
-          AttributeName: toRedBlueSide
-          AttributeType: "S"
-        -
-          AttributeName: toBlueRedSide
-          AttributeType: "S"
-        -
-          AttributeName: created_at
-          AttributeType: "S"
+          AttributeType: S
       KeySchema:
         -
           AttributeName: id
