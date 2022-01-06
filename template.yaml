@@ -178,6 +178,19 @@ Resources:
         - - 'integrations'
           - !Ref routesIntegration
 
+  ### Set boats
+  setBoatsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref apiGateway
+      RouteKey: setBoats
+      AuthorizationType: NONE
+      OperationName: SetBoatsRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref routesIntegration
+
   ## Deploy
   deployment:
     Type: AWS::ApiGatewayV2::Deployment
@@ -186,6 +199,7 @@ Resources:
       - disconnectRoute
       - defaultRoute
       - searchGameRoute
+      - setBoatsRoute
     Properties:
       ApiId: !Ref apiGateway
 
@@ -223,11 +237,11 @@ Resources:
       TableName: !Sub ${projectName}-game
       AttributeDefinitions: 
         - 
-          AttributeName: id
+          AttributeName: gameId
           AttributeType: S
       KeySchema:
         -
-          AttributeName: id
+          AttributeName: gameId
           KeyType: HASH
       ProvisionedThroughput: 
         ReadCapacityUnits: 10

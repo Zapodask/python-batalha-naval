@@ -21,6 +21,8 @@ def handler(event, context):
             routes.disconnect(connection_id)
         elif key == "searchGame":
             routes.searchGame(connection_id)
+        elif key == "setBoats":
+            routes.setBoats(connection_id, body)
         else:
             routes.default(connection_id)
 
