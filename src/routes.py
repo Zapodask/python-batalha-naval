@@ -222,3 +222,80 @@ class Routes:
 
         else:
             self.utils.response(id, "aguardando o outro jogador")
+
+    def move(self, id: str, body: dict):
+        game_id = body.get("gameId")
+        target = body.get("target")
+
+        side = self.utils.getPlayerSide(id, game_id)
+        i_side = "blue" if side == "red" else "red"
+
+        game = game_table.get_item(game_id)["Item"]
+
+        if game == []:
+            self.utils.response(id, "jogo não encontrado")
+            return
+
+        to_side_str = "to" + ("RedBlue" if side == "red" else "BlueRed") + "Side"
+
+        board = dict(game.get(f"{i_side}Side"))
+        to_board = dict(game.get(to_side_str))
+        boats = list(game.get(f"{i_side}Boats"))
+
+        if len(target) != 2:
+            self.utils.response(id, "movimento invalido")
+            return
+
+        col = target[0].upper()
+        row = target[1]
+
+        position = board[col][row]
+
+        if position == 1 or position == 3:
+            self.utils.response(id, "você já atacou este local")
+            return
+
+        if position == 0:
+            board[col][row] = 1
+            to_board[col][row] = 1
+
+            self.utils.response(
+                [game.get("redPlayer"), game.get("bluePlayer")],
+                ("vermelho" if side == "red" else "azul")
+                + f" jogou {col}{row} e acertou a água",
+            )
+
+        if position == 2:
+            board[col][row] = 3
+            to_board[col][row] = 3
+            boats.remove(f"{col}{row}")
+
+            self.utils.response(
+                [game.get("redPlayer"), game.get("bluePlayer")],
+                ("vermelho" if side == "red" else "azul")
+                + f" jogou {col}{row} e acertou um barco",
+            )
+
+            if boats == []:
+                self.utils.response(
+                    [game.get("redPlayer"), game.get("bluePlayer")],
+                    ("vermelho" if side == "red" else "azul") + " ganhou",
+                )
+
+                game_table.remove_item(Key={"gameId": game_id})
+                return
+
+        game.update_item(
+            Key={"gameId": game_id},
+            UpdateExpression=f"SET #{i_side}Side=:s, #{to_side_str}=:t, #{i_side}Boats=:b",
+            ExpressionAttributeNames={
+                f"#{i_side}Side": f"{i_side}Side",
+                f"#{to_side_str}": to_side_str,
+                f"#{i_side}Boats": f"{i_side}Boats",
+            },
+            ExpressionAttributeValues={
+                ":s": str(board),
+                ":t": str(to_board),
+                ":b": str(boats),
+            },
+        )

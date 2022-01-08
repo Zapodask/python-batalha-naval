@@ -23,6 +23,8 @@ def handler(event, context):
             routes.searchGame(connection_id)
         elif key == "setBoats":
             routes.setBoats(connection_id, body)
+        elif key == "move":
+            routes.move(connection_id, body)
         else:
             routes.default(connection_id)
 
