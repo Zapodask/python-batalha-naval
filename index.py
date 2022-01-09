@@ -7,7 +7,7 @@ def handler(event, context):
     print(json.dumps(event))
 
     req_context = event.get("requestContext")
-    body = json.loads(event.get("body")) if event.get("body") else None
+    body = dict(json.loads(event.get("body"))) if event.get("body") else None
 
     routes = Routes()
 

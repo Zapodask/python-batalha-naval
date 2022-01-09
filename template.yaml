@@ -191,6 +191,19 @@ Resources:
         - - 'integrations'
           - !Ref routesIntegration
 
+  ### Make your movement
+  moveRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref apiGateway
+      RouteKey: move
+      AuthorizationType: NONE
+      OperationName: MoveRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref routesIntegration
+
   ## Deploy
   deployment:
     Type: AWS::ApiGatewayV2::Deployment
@@ -200,6 +213,7 @@ Resources:
       - defaultRoute
       - searchGameRoute
       - setBoatsRoute
+      - moveRoute
     Properties:
       ApiId: !Ref apiGateway
 

@@ -27,13 +27,11 @@ class update:
         # Variáveis de diretório
         path = os.path.dirname(os.path.realpath(__file__))
         os.chdir(path + "/../")
+        dirs = os.listdir()
 
         # Remove resquícios da atualização anterior
-        try:
-            shutil.rmtree("build.zip", ignore_errors=True)
-            shutil.rmtree("build")
-        except:
-            pass
+        os.remove("build") if "build" in dirs else None
+        os.remove("build.zip") if "build.zip" in dirs else None
 
         # Instalando as dependências
         os.system(
@@ -45,7 +43,7 @@ class update:
         to_move = ["index.py", "board.json"]
         [shutil.copyfile(file, f"build/{file}") for file in to_move]
 
-        if "src" in os.listdir():
+        if "src" in dirs:
             shutil.copytree("src", "build/src")
 
         # Zipando código
