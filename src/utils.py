@@ -29,7 +29,7 @@ class Utils:
         for i in id:
             client.post_to_connection(ConnectionId=i, Data=str(ret))
 
-    def validations(self, id: str, game_id: str) -> dict or list:
+    def validations(self, id: str, game_id: str) -> dict or bool:
         """
         Validação básica
 
@@ -37,10 +37,9 @@ class Utils:
         :param game_id: id do jogo
         :type id: string
         :type game_id: string
-        :return: dict com game, blue player, red player e side ou lista de erros
-        :rtype: dict ou lista
+        :return: dict com game, blue player, red player e side ou False
+        :rtype: dict ou bool
         """
-        errors = []
         ret = {}
 
         game = game_table.get_item(Key={"gameId": game_id}).get("Item")

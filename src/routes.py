@@ -290,9 +290,9 @@ class Routes:
 
         board = json.loads((game.get(f"{i_side}Side")).replace("'", '"'))
         to_board = json.loads((game.get(to_side_str)).replace("'", '"'))
-        boats = list(game.get(f"{i_side}Boats"))
+        boats = ast.literal_eval(game.get(f"{i_side}Boats"))
 
-        if len(target) != 2:
+        if (len(target) == 3 and target[1] != "1") or len(target) != 2:
             self.utils.response(id, "movimento invalido")
             return
 
@@ -319,7 +319,7 @@ class Routes:
             to_board[col][row] = 1
 
             self.utils.response(
-                [blue_player],
+                [red_player, blue_player],
                 f"{t_side} jogou {col}{row} e acertou a água",
             )
 
@@ -342,7 +342,7 @@ class Routes:
                 game_table.remove_item(Key={"gameId": game_id})
                 return
 
-        game.update_item(
+        game_table.update_item(
             Key={"gameId": game_id},
             UpdateExpression=f"SET #{i_side}Side=:s, #{to_side_str}=:t, #{i_side}Boats=:b, #turn=:u",
             ExpressionAttributeNames={
