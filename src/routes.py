@@ -98,33 +98,25 @@ class Routes:
             },
         ]
 
-        game = game_table.get_item(Key={"gameId": game_id}).get("Item")
+        val = self.utils.validations(id, game_id)
 
-        if game == None:
-            self.utils.response(id, "jogo não existe ou já acabou")
+        if val == False:
             return
 
-        blue_player = game.get("bluePlayer")
-        red_player = game.get("redPlayer")
+        game = val.get("game")
+        blue_player = val.get("bluePlayer")
+        red_player = val.get("redPlayer")
+        side = val.get("side")
 
         errors = []
         validate_list = []
 
-        side = ""
-
-        if game.get("redPlayer") == id:
-            side = "red"
-
-        elif game.get("bluePlayer") == id:
-            side = "blue"
-
-        else:
-            self.utils.response(id, "você não está nesse jogo")
+        if game.get(f"{side}Boats") != "[]":
+            self.utils.response(id, "barcos já posicionados")
             return
 
         to_add_board = json.loads(game.get(f"{side}Side").replace("'", '"'))
 
-        # Validate if not None
         for validation in validation_list:
             if validation["value"] == None:
                 errors.append(f"{validation['key']} é necessário")
@@ -133,7 +125,6 @@ class Routes:
             self.utils.response(id, str(errors))
             return
 
-        # Validate quantity
         for validation in validation_list:
             qty = validation["qty"]
 
@@ -153,8 +144,29 @@ class Routes:
                     init_col_n = self.utils.getCol(init_col)
                     final_col_n = self.utils.getCol(final_col)
 
-                    init_row = int(boat[0][1])
-                    final_row = int(boat[1][1])
+                    str_init_row = boat[0][1]
+                    str_final_row = boat[1][1]
+
+                    if str_init_row == "1":
+                        try:
+                            t = boat[0][2]
+
+                            if t == "0":
+                                str_init_row += t
+                        except:
+                            pass
+
+                    if str_final_row == "1":
+                        try:
+                            t = boat[0][2]
+
+                            if t == "0":
+                                str_final_row += t
+                        except:
+                            pass
+
+                    init_row = int(str_init_row)
+                    final_row = int(str_final_row)
 
                     if (
                         final_row - init_row + 1 == validation["size"]
@@ -174,11 +186,11 @@ class Routes:
 
                                 i += 1
 
-                        elif boat[0][1] == boat[1][1]:
+                        elif str_init_row == str_final_row:
                             i = init_col_n
 
                             while i <= final_col_n:
-                                ret = f"{self.utils.getCol(i)}{boat[1][1]}"
+                                ret = f"{self.utils.getCol(i)}{str_final_row}"
 
                                 if ret in validate_list:
                                     errors.append(f"{ret} já está em uso")
@@ -201,7 +213,7 @@ class Routes:
 
                                 i += 1
 
-                        if boat[0][1] == boat[1][1]:
+                        if str_init_row == str_final_row:
                             i = init_col_n
 
                             while i <= final_col_n:
@@ -212,9 +224,6 @@ class Routes:
                                 i += 1
 
                     else:
-                        print(
-                            f"init_row: {init_row}, final_row: {final_row}, init_col_n: {init_col_n}, final_col_n: {final_col_n}, validation_size: {type(validation['size'])}"
-                        )
                         errors.append(
                             "um " + validation["key"] + " não possui o tamanho certo"
                         )
@@ -244,37 +253,43 @@ class Routes:
         )
 
         if (side == "red" and game.get("blueBoats") != "[]") or (
-            side == "blue" and game.get("redeBoats") != "[]"
+            side == "blue" and game.get("redBoats") != "[]"
         ):
             self.utils.response(red_player, "você é o vermelho")
             self.utils.response(blue_player, "você é o azul")
             self.utils.response(
                 [blue_player, red_player],
-                f"começando o jogo, "
-                + ("vermelho" if game.get("turn") == "red" else "azul")
-                + " começa",
+                f"começando o jogo,  {self.utils.translateSide(side)} começa",
             )
 
         else:
             self.utils.response(id, "aguardando o outro jogador")
 
-    def move(self, id: str, body: dict):
+    def shoot(self, id: str, body: dict):
         game_id = body.get("gameId")
         target = body.get("target")
 
-        side = self.utils.getPlayerSide(id, game_id)
+        val = self.utils.validations(id, game_id)
+
+        if val == False:
+            return
+
+        game = val.get("game")
+        blue_player = val.get("bluePlayer")
+        red_player = val.get("redPlayer")
+        side = val.get("side")
+
         i_side = "blue" if side == "red" else "red"
+        t_side = self.utils.translateSide(side)
 
-        game = game_table.get_item(game_id)["Item"]
-
-        if game == []:
-            self.utils.response(id, "jogo não encontrado")
+        if game.get("turn") != side:
+            self.utils.response(id, "não é sua vez")
             return
 
         to_side_str = "to" + ("RedBlue" if side == "red" else "BlueRed") + "Side"
 
-        board = dict(game.get(f"{i_side}Side"))
-        to_board = dict(game.get(to_side_str))
+        board = json.loads((game.get(f"{i_side}Side")).replace("'", '"'))
+        to_board = json.loads((game.get(to_side_str)).replace("'", '"'))
         boats = list(game.get(f"{i_side}Boats"))
 
         if len(target) != 2:
@@ -283,6 +298,15 @@ class Routes:
 
         col = target[0].upper()
         row = target[1]
+
+        if row == "1":
+            try:
+                t = target[2]
+
+                if t == "0":
+                    row += t
+            except:
+                pass
 
         position = board[col][row]
 
@@ -295,26 +319,24 @@ class Routes:
             to_board[col][row] = 1
 
             self.utils.response(
-                [game.get("redPlayer"), game.get("bluePlayer")],
-                ("vermelho" if side == "red" else "azul")
-                + f" jogou {col}{row} e acertou a água",
+                [blue_player],
+                f"{t_side} jogou {col}{row} e acertou a água",
             )
 
         if position == 2:
             board[col][row] = 3
             to_board[col][row] = 3
-            boats.remove(f"{col}{row}")
+            boats.remove(col + row)
 
             self.utils.response(
-                [game.get("redPlayer"), game.get("bluePlayer")],
-                ("vermelho" if side == "red" else "azul")
-                + f" jogou {col}{row} e acertou um barco",
+                [red_player, blue_player],
+                f"{t_side} jogou {col}{row} e acertou um barco",
             )
 
             if boats == []:
                 self.utils.response(
-                    [game.get("redPlayer"), game.get("bluePlayer")],
-                    ("vermelho" if side == "red" else "azul") + " ganhou",
+                    [red_player, blue_player],
+                    f"{t_side} ganhou",
                 )
 
                 game_table.remove_item(Key={"gameId": game_id})
@@ -322,15 +344,17 @@ class Routes:
 
         game.update_item(
             Key={"gameId": game_id},
-            UpdateExpression=f"SET #{i_side}Side=:s, #{to_side_str}=:t, #{i_side}Boats=:b",
+            UpdateExpression=f"SET #{i_side}Side=:s, #{to_side_str}=:t, #{i_side}Boats=:b, #turn=:u",
             ExpressionAttributeNames={
                 f"#{i_side}Side": f"{i_side}Side",
                 f"#{to_side_str}": to_side_str,
                 f"#{i_side}Boats": f"{i_side}Boats",
+                "#turn": "turn",
             },
             ExpressionAttributeValues={
                 ":s": str(board),
                 ":t": str(to_board),
                 ":b": str(boats),
+                ":u": i_side,
             },
         )

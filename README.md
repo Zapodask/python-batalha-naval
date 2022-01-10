@@ -28,9 +28,47 @@
     python scripts\update.py
     ```
 
-## Routes
+## Routes examples
 
+* Encontrar jogo
+    ```json
+    {
+        "action": "searchGame"
+    }
+    ```
 
+* Posicionar barcos
+    ```json
+    {
+        "action": "setBoats",
+        "gameId": "43b3efb8-4989-417e-8ee7-7046cd6d14aa",
+        "tug": "[
+            ['A1', 'A2'],
+            ['B1', 'B2'],
+            ['C1', 'C2']
+        ]",
+        "destroyer": "[
+            ['D1', 'D3'],
+            ['E1', 'E3']
+        ]",
+        "cruiser": "[
+            ['F1', 'F4'],
+            ['G1', 'G4']
+        ]",
+        "aircraft_carrier": "[
+            ['H1', 'H5']
+        ]"
+    }
+    ```
+
+* Atirar bomba
+    ```json
+    {
+        "action": "shoot",
+        "gameId": "43b3efb8-4989-417e-8ee7-7046cd6d14aa",
+        "target": "J10"
+    }
+    ```
 
 ## License
 

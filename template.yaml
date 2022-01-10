@@ -191,14 +191,14 @@ Resources:
         - - 'integrations'
           - !Ref routesIntegration
 
-  ### Make your movement
-  moveRoute:
+  ### Shoot bomb
+  shootRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref apiGateway
-      RouteKey: move
+      RouteKey: shoot
       AuthorizationType: NONE
-      OperationName: MoveRoute
+      OperationName: ShootRoute
       Target: !Join
         - '/'
         - - 'integrations'
@@ -213,7 +213,7 @@ Resources:
       - defaultRoute
       - searchGameRoute
       - setBoatsRoute
-      - moveRoute
+      - shootRoute
     Properties:
       ApiId: !Ref apiGateway
 
