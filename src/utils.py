@@ -22,14 +22,14 @@ class Utils:
             ret["errors"] = []
 
             for m in msg:
-                ret["errors"].append(m)
+                ret["errors"].append(m.capitalize())
         else:
-            ret["message"] = msg
+            ret["message"] = msg.capitalize()
 
         for i in id:
             client.post_to_connection(ConnectionId=i, Data=str(ret))
 
-    def validations(self, id: str, game_id: str) -> dict or bool:
+    def validations(self, id: str, game_id: str) -> bool and dict or str:
         """
         Validação básica
 
@@ -37,16 +37,15 @@ class Utils:
         :param game_id: id do jogo
         :type id: string
         :type game_id: string
-        :return: dict com game, blue player, red player e side ou False
-        :rtype: dict ou bool
+        :return: status do retorno e dict com game, blue player, red player e side ou erro
+        :rtype: bool, dict ou string
         """
         ret = {}
 
         game = game_table.get_item(Key={"gameId": game_id}).get("Item")
 
         if game is None:
-            self.response(id, ["jogo não existe ou já acabou"], True)
-            return False
+            return False, "jogo não existe ou já acabou"
 
         ret["game"] = game
 
@@ -60,10 +59,9 @@ class Utils:
             ret["side"] = "blue"
 
         else:
-            self.response(id, ["você não está neste jogo"], True)
-            return False
+            return False, "você não está neste jogo"
 
-        return ret
+        return True, ret
 
     def getCol(self, l: str or int) -> str or int:
         """
@@ -78,13 +76,22 @@ class Utils:
         numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
         if type(l) == str:
-            index = letters.index(l)
+            l = l.upper()
 
-            return numbers[index]
-        else:
-            index = numbers.index(l)
+            if l in letters:
+                index = letters.index(l)
 
-            return letters[index]
+                return numbers[index]
+            else:
+                return "letra inválida, escolha de a-j"
+
+        elif type(l) == int:
+            if l in numbers:
+                index = numbers.index(l)
+
+                return letters[index]
+            else:
+                return "numero inválido, escolha de 1-10"
 
     def translateSide(self, s: str) -> str:
         """
@@ -97,4 +104,7 @@ class Utils:
         """
         t = {"red": "vermelho", "blue": "azul"}
 
-        return t[s]
+        try:
+            return t[s]
+        except KeyError:
+            return "lado inválido"

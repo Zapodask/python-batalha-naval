@@ -8,9 +8,7 @@ search_table = dynamodb.Table(getenv("SEARCH_GAME_TABLE"))
 game_table = dynamodb.Table(getenv("GAME_TABLE"))
 
 
-endpoint_url = (
-    f'{getenv("API_ENDPOINT").replace("wss", "https", 1)}/{getenv("STAGE_NAME")}'
-)
+endpoint_url = f'{getenv("API_ENDPOINT").replace("wss", "https", 1)}'
 
 apiGatewayClient = client(
     "apigatewaymanagementapi",

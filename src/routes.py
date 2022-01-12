@@ -9,9 +9,10 @@ from src.utils import Utils
 from src.services import search_table, game_table
 
 
-class Routes:
-    utils = Utils()
+utils = Utils()
 
+
+class Routes:
     def connect(self, id: str):
         return
 
@@ -19,7 +20,7 @@ class Routes:
         return
 
     def default(self, id: str):
-        self.utils.response(id, "Action not allowed")
+        utils.response(id, "Action not allowed")
 
     def searchGame(self, id: str):
         scan = search_table.scan().get("Items")
@@ -28,8 +29,9 @@ class Routes:
             opponent = scan[0].get("connectionId")
 
             if opponent == id:
-                self.utils.response(id, "você já está buscando um jogo")
-                return
+                utils.response(id, "você já está buscando um jogo")
+
+                return False
 
             game_id = str(uuid.uuid4())
 
@@ -52,7 +54,7 @@ class Routes:
 
                 game_table.put_item(Item=data)
 
-            self.utils.response(
+            utils.response(
                 [id, opponent],
                 f"Oponente encontrado, gameId: {game_id}",
             )
@@ -62,7 +64,9 @@ class Routes:
         else:
             search_table.put_item(Item={"connectionId": id})
 
-            self.utils.response(id, "Procurando jogo...")
+            utils.response(id, "Procurando jogo...")
+
+            return True
 
     def setBoats(self, id: str, body: dict):
         game_id = body.get("gameId")
@@ -98,10 +102,11 @@ class Routes:
             },
         ]
 
-        val = self.utils.validations(id, game_id)
+        status, val = utils.validations(id, game_id)
 
-        if val == False:
-            return
+        if status == False:
+            utils.response(id, [val], True)
+            return val
 
         game = val.get("game")
         blue_player = val.get("bluePlayer")
@@ -112,7 +117,7 @@ class Routes:
         validate_list = []
 
         if game.get(f"{side}Boats") != "[]":
-            self.utils.response(id, "barcos já posicionados")
+            utils.response(id, "barcos já posicionados")
             return
 
         to_add_board = json.loads(game.get(f"{side}Side").replace("'", '"'))
@@ -122,7 +127,7 @@ class Routes:
                 errors.append(f"{validation['key']} é necessário")
 
         if errors != []:
-            self.utils.response(id, str(errors))
+            utils.response(id, str(errors))
             return
 
         for validation in validation_list:
@@ -132,7 +137,7 @@ class Routes:
                 errors.append(f"{validation['key']} tem {qty} de quantidade")
 
         if errors != []:
-            self.utils.response(id, str(errors))
+            utils.response(id, str(errors))
             return
 
         for validation in validation_list:
@@ -141,8 +146,8 @@ class Routes:
                     init_col = boat[0][0].upper()
                     final_col = boat[1][0].upper()
 
-                    init_col_n = self.utils.getCol(init_col)
-                    final_col_n = self.utils.getCol(final_col)
+                    init_col_n = utils.getCol(init_col)
+                    final_col_n = utils.getCol(final_col)
 
                     str_init_row = boat[0][1]
                     str_final_row = boat[1][1]
@@ -158,7 +163,7 @@ class Routes:
 
                     if str_final_row == "1":
                         try:
-                            t = boat[0][2]
+                            t = boat[1][2]
 
                             if t == "0":
                                 str_final_row += t
@@ -190,7 +195,7 @@ class Routes:
                             i = init_col_n
 
                             while i <= final_col_n:
-                                ret = f"{self.utils.getCol(i)}{str_final_row}"
+                                ret = f"{utils.getCol(i)}{str_final_row}"
 
                                 if ret in validate_list:
                                     errors.append(f"{ret} já está em uso")
@@ -201,7 +206,7 @@ class Routes:
                                 i += 1
 
                         if errors != []:
-                            self.utils.response(id, str(errors))
+                            utils.response(id, str(errors))
 
                             return
 
@@ -217,7 +222,7 @@ class Routes:
                             i = init_col_n
 
                             while i <= final_col_n:
-                                i_n = self.utils.getCol(i)
+                                i_n = utils.getCol(i)
 
                                 to_add_board[i_n][boat[1]] = 2
 
@@ -229,13 +234,11 @@ class Routes:
                         )
 
                 else:
-                    self.utils.response(
-                        id, "barcos são listas com 2 itens: inicio e fim"
-                    )
+                    utils.response(id, "barcos são listas com 2 itens: inicio e fim")
                     return
 
         if errors != []:
-            self.utils.response(id, str(errors))
+            utils.response(id, str(errors))
 
             return
 
@@ -255,24 +258,27 @@ class Routes:
         if (side == "red" and game.get("blueBoats") != "[]") or (
             side == "blue" and game.get("redBoats") != "[]"
         ):
-            self.utils.response(red_player, "você é o vermelho")
-            self.utils.response(blue_player, "você é o azul")
-            self.utils.response(
+            utils.response(red_player, "você é o vermelho")
+            utils.response(blue_player, "você é o azul")
+            utils.response(
                 [blue_player, red_player],
-                f"começando o jogo,  {self.utils.translateSide(side)} começa",
+                f"começando o jogo,  {utils.translateSide(side)} começa",
             )
 
         else:
-            self.utils.response(id, "aguardando o outro jogador")
+            utils.response(id, "aguardando o outro jogador")
+
+        return True
 
     def shoot(self, id: str, body: dict):
         game_id = body.get("gameId")
         target = body.get("target")
 
-        val = self.utils.validations(id, game_id)
+        status, val = utils.validations(id, game_id)
 
-        if val == False:
-            return
+        if status == False:
+            utils.response(id, [val], True)
+            return val
 
         game = val.get("game")
         blue_player = val.get("bluePlayer")
@@ -280,10 +286,10 @@ class Routes:
         side = val.get("side")
 
         i_side = "blue" if side == "red" else "red"
-        t_side = self.utils.translateSide(side)
+        t_side = utils.translateSide(side)
 
         if game.get("turn") != side:
-            self.utils.response(id, "não é sua vez")
+            utils.response(id, "não é sua vez")
             return
 
         to_side_str = "to" + ("RedBlue" if side == "red" else "BlueRed") + "Side"
@@ -293,7 +299,7 @@ class Routes:
         boats = ast.literal_eval(game.get(f"{i_side}Boats"))
 
         if (len(target) == 3 and target[1] != "1") or len(target) != 2:
-            self.utils.response(id, "movimento invalido")
+            utils.response(id, "movimento invalido")
             return
 
         col = target[0].upper()
@@ -311,14 +317,14 @@ class Routes:
         position = board[col][row]
 
         if position == 1 or position == 3:
-            self.utils.response(id, "você já atacou este local")
+            utils.response(id, "você já atacou este local")
             return
 
         if position == 0:
             board[col][row] = 1
             to_board[col][row] = 1
 
-            self.utils.response(
+            utils.response(
                 [red_player, blue_player],
                 f"{t_side} jogou {col}{row} e acertou a água",
             )
@@ -328,13 +334,13 @@ class Routes:
             to_board[col][row] = 3
             boats.remove(col + row)
 
-            self.utils.response(
+            utils.response(
                 [red_player, blue_player],
                 f"{t_side} jogou {col}{row} e acertou um barco",
             )
 
             if boats == []:
-                self.utils.response(
+                utils.response(
                     [red_player, blue_player],
                     f"{t_side} ganhou",
                 )
@@ -358,3 +364,5 @@ class Routes:
                 ":u": i_side,
             },
         )
+
+        return True

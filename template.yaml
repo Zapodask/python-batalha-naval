@@ -85,8 +85,7 @@ Resources:
         Variables: 
           SEARCH_GAME_TABLE: !Sub ${projectName}-search-game
           GAME_TABLE: !Sub ${projectName}-game
-          API_ENDPOINT: !GetAtt apiGateway.ApiEndpoint
-          STAGE_NAME: !Ref apiGatewayStageName
+          API_ENDPOINT: !Sub ${apiGateway.ApiEndpoint}/${apiGatewayStageName}
 
   ## Logs
   lambdaLogGroup:
