@@ -13,7 +13,7 @@ project_name = os.path.basename(cwd)
 bucket_name = os.getenv("BUCKET_NAME")
 
 s3_client = boto3.client("s3")
-lambda_client = boto3.client("lambda")
+lambda_client = boto3.client("lambda", region_name="us-east-1")
 
 
 class update:

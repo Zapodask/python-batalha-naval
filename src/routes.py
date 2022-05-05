@@ -17,7 +17,7 @@ class Routes:
         return
 
     def disconnect(self, id: str):
-        return
+        search_table.delete_item(Key={"connectionId": id})
 
     def default(self, id: str):
         utils.response(id, "Action not allowed")
